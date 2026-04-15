@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Taskr - Uitnodiging</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{min-height:100vh;display:flex;align-items:center;justify-content:center;
+      background:linear-gradient(135deg,#030d12,#041520,#042a1a);
+      font-family:Georgia,serif;color:#fff;padding:24px;text-align:center}
+    .card{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);
+      border-radius:24px;padding:40px 28px;max-width:360px;width:100%}
+    h1{font-size:22px;color:#00e8a8;letter-spacing:2px;margin-bottom:8px}
+    .logo{font-size:48px;margin-bottom:12px}
+    .list-name{font-size:18px;margin-bottom:8px}
+    .sub{font-size:13px;color:#6b7fbc;margin-bottom:32px;margin-top:8px;line-height:1.5}
+    .btn{display:block;width:100%;padding:16px;border-radius:14px;font-size:16px;
+      font-family:Georgia,serif;text-decoration:none;font-weight:bold;
+      border:none;margin-bottom:12px;cursor:pointer}
+    .btn-primary{background:linear-gradient(135deg,#00c98a,#00ff99);color:#030d12}
+    .btn-store{background:rgba(255,255,255,0.07);color:#aaa;
+      border:1px solid rgba(255,255,255,0.12);font-size:13px;padding:13px}
+    .divider{color:#444;margin:16px 0;font-size:12px}
+  </style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">&#10003;</div>
+  <h1>TASKR</h1>
+  <p class="list-name" id="invite-text">Je bent uitgenodigd voor</p>
+  <p class="list-name"><strong id="list-name">een gedeelde lijst</strong></p>
+  <p class="sub">Open de Taskr-app om de uitnodiging te accepteren</p>
+  <a id="openBtn" class="btn btn-primary" href="#">Open in Taskr</a>
+  <p class="divider">&#8212; of &#8212;</p>
+  <a class="btn btn-store"
+     href="https://play.google.com/store/apps/details?id=com.bmanexus.taskr">
+    &#128242; Download Taskr via Play Store
+  </a>
+</div>
+<script>
+  const token = new URLSearchParams(window.location.search).get('token') || '';
+  const PLAY_STORE = 'https://play.google.com/store/apps/details?id=com.bmanexus.taskr';
+  const intentUrl = 'intent://join/' + token
+    + '#Intent;scheme=taskr;package=com.bmanexus.taskr;S.browser_fallback_url='
+    + encodeURIComponent(PLAY_STORE) + ';end';
+
+  const btn = document.getElementById('openBtn');
+  const isAndroid = /Android/i.test(navigator.userAgent);
+
+  if (!token || !isAndroid) {
+    btn.style.display = 'none';
+  } else {
+    btn.href = intentUrl;
+  }
+
+  // Fetch list name from Supabase
+  if (token) {
+    fetch('https://qgeuniiclrzndzmayekt.supabase.co/functions/v1/join?token=' + token)
+      .then(r => r.json())
+      .then(d => { if (d.name) document.getElementById('list-name').textContent = d.name; })
+      .catch(() => {});
+  }
+</script>
+</body>
+</html>

@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="nl">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Taskr - Uitnodiging</title>
+  <title>Taskr</title>
   <style>
     *{margin:0;padding:0;box-sizing:border-box}
     body{min-height:100vh;display:flex;align-items:center;justify-content:center;
@@ -22,44 +22,68 @@
     .btn-store{background:rgba(255,255,255,0.07);color:#aaa;
       border:1px solid rgba(255,255,255,0.12);font-size:13px;padding:13px}
     .divider{color:#444;margin:16px 0;font-size:12px}
+    .check{font-size:64px;margin-bottom:16px}
+    .confirmed-title{font-size:20px;font-weight:bold;color:#fff;margin-bottom:10px}
+    .confirmed-sub{font-size:13px;color:#6b7fbc;line-height:1.6}
   </style>
 </head>
 <body>
-<div class="card">
+<div class="card" id="invite-card">
   <div class="logo">&#10003;</div>
   <h1>TASKR</h1>
-  <p class="list-name" id="invite-text">Je bent uitgenodigd voor</p>
-  <p class="list-name"><strong id="list-name">een gedeelde lijst</strong></p>
-  <p class="sub">Open de Taskr-app om de uitnodiging te accepteren</p>
+  <p class="list-name" id="invite-text">You have been invited to</p>
+  <p class="list-name"><strong id="list-name">a shared list</strong></p>
+  <p class="sub">Open the Taskr app to accept the invitation</p>
   <a id="openBtn" class="btn btn-primary" href="#">Open in Taskr</a>
-  <p class="divider">&#8212; of &#8212;</p>
+  <p class="divider">&#8212; or &#8212;</p>
   <a class="btn btn-store"
      href="https://play.google.com/store/apps/details?id=com.bmanexus.taskr">
-    &#128242; Download Taskr via Play Store
+    &#128242; Download Taskr on Play Store
   </a>
 </div>
+
+<div class="card" id="confirmed-card" style="display:none">
+  <div class="check">&#9989;</div>
+  <h1>TASKR</h1>
+  <p class="confirmed-title">Email confirmed!</p>
+  <p class="confirmed-sub">Your account is ready. Open the Taskr app to sign in and start using Taskr.</p>
+  <div style="margin-top:32px">
+    <a class="btn btn-store"
+       href="https://play.google.com/store/apps/details?id=com.bmanexus.taskr">
+      &#128242; Download Taskr on Play Store
+    </a>
+  </div>
+</div>
+
 <script>
-  const token = new URLSearchParams(window.location.search).get('token') || '';
+  const params = new URLSearchParams(window.location.search);
+  const token = params.get('token') || '';
+  const confirmed = params.get('confirmed') === '1';
   const PLAY_STORE = 'https://play.google.com/store/apps/details?id=com.bmanexus.taskr';
-  const intentUrl = 'intent://join/' + token
-    + '#Intent;scheme=taskr;package=com.bmanexus.taskr;S.browser_fallback_url='
-    + encodeURIComponent(PLAY_STORE) + ';end';
 
-  const btn = document.getElementById('openBtn');
-  const isAndroid = /Android/i.test(navigator.userAgent);
-
-  if (!token || !isAndroid) {
-    btn.style.display = 'none';
+  if (confirmed) {
+    document.getElementById('invite-card').style.display = 'none';
+    document.getElementById('confirmed-card').style.display = 'block';
   } else {
-    btn.href = intentUrl;
-  }
+    const intentUrl = 'intent://join/' + token
+      + '#Intent;scheme=taskr;package=com.bmanexus.taskr;S.browser_fallback_url='
+      + encodeURIComponent(PLAY_STORE) + ';end';
 
-  // Fetch list name from Supabase
-  if (token) {
-    fetch('https://qgeuniiclrzndzmayekt.supabase.co/functions/v1/join?token=' + token)
-      .then(r => r.json())
-      .then(d => { if (d.name) document.getElementById('list-name').textContent = d.name; })
-      .catch(() => {});
+    const btn = document.getElementById('openBtn');
+    const isAndroid = /Android/i.test(navigator.userAgent);
+
+    if (!token || !isAndroid) {
+      btn.style.display = 'none';
+    } else {
+      btn.href = intentUrl;
+    }
+
+    if (token) {
+      fetch('https://qgeuniiclrzndzmayekt.supabase.co/functions/v1/join?token=' + token)
+        .then(r => r.json())
+        .then(d => { if (d.name) document.getElementById('list-name').textContent = d.name; })
+        .catch(() => {});
+    }
   }
 </script>
 </body>

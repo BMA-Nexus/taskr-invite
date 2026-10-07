@@ -3,6 +3,24 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!--
+    Content Security Policy: defense in depth.
+    This page is static HTML hosted on GitHub Pages with inline <style> and one
+    inline <script>. CSP locks down what the browser will load/execute:
+
+    - default-src 'none'      → reject everything by default; explicit allows below
+    - style-src 'unsafe-inline'  → for our inline <style>; no external CSS
+    - script-src 'unsafe-inline' → for our inline <script>; no external JS
+    - connect-src ...         → only Supabase Edge Function endpoint (fetch target)
+    - img-src data:           → for emoji / no external images
+    - form-action 'none'      → block form submissions (we have no <form>)
+    - base-uri 'none'         → block <base> tag injection
+    - frame-ancestors 'none'  → can't be iframed (clickjacking defense)
+
+    Even if a future regression added user-controlled HTML, an attacker couldn't
+    exfil to arbitrary hosts or load malicious external scripts.
+  -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; connect-src https://qgeuniiclrzndzmayekt.supabase.co; img-src data:; form-action 'none'; base-uri 'none'; frame-ancestors 'none'">
   <title>Taskr</title>
   <style>
     *{margin:0;padding:0;box-sizing:border-box}
@@ -76,10 +94,31 @@
       btn.style.display = 'none';
     } else {
       btn.href = intentUrl;
+      // Visibility-change watchdog for in-app browsers (Instagram, Facebook,
+      // WhatsApp) that DON'T understand intent:// URIs and silently no-op the
+      // click. Chrome and the system browser handle intent:// natively
+      // (including the browser_fallback_url for users who don't have Taskr
+      // installed), so in those cases the page becomes hidden before our 1.5s
+      // watchdog fires and we cancel it. If still visible after 1.5s, intent
+      // launch failed → redirect to Play Store as the safe fallback.
+      btn.addEventListener('click', function () {
+        const watchdog = setTimeout(function () {
+          if (document.visibilityState === 'visible') {
+            window.location.href = PLAY_STORE;
+          }
+        }, 1500);
+        function onVisChange() {
+          clearTimeout(watchdog);
+          document.removeEventListener('visibilitychange', onVisChange);
+        }
+        document.addEventListener('visibilitychange', onVisChange);
+      });
     }
 
     if (token) {
-      fetch('https://qgeuniiclrzndzmayekt.supabase.co/functions/v1/join?token=' + token)
+      // forceFunctionRegion keeps this request in the EU (Ireland), where the data
+      // is stored, wherever the visitor is.
+      fetch('https://qgeuniiclrzndzmayekt.supabase.co/functions/v1/join?forceFunctionRegion=eu-west-1&token=' + encodeURIComponent(token))
         .then(r => r.json())
         .then(d => { if (d.name) document.getElementById('list-name').textContent = d.name; })
         .catch(() => {});
